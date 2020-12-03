@@ -1,0 +1,247 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+	<title>reveal.js</title>
+
+	<link rel="stylesheet" href="dist/reset.css">
+	<link rel="stylesheet" href="dist/reveal.css">
+	<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+
+	<!-- Theme used for syntax highlighted code -->
+	<link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
+
+
+</head>
+
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section data-background="linear-gradient(-45deg, #000f55, #50106e)">
+				<img src="https://s3.amazonaws.com/media-p.slid.es/uploads/833688/images/7513686/traefik.logo.white.svg"
+					alt="Traefik Logo" style="height: 350px; margin: 0 auto 4rem auto; background: transparent;"
+					class="demo-logo">
+				<h4 style="color:whitesmoke">ein moderner Router für Microservices</h4>
+				<p style="color:whitesmoke">
+					<small>©<a href="mailto:twe@ongoingmedia.de">Tobias Wessels</a>™</small>
+				</p>
+				<p id="date" style="font-size: small; color:whitesmoke"></p>
+			</section>
+			<section>
+				<section>
+				<h2>Was ist Traefik?</h2>
+				<img src="https://doc.traefik.io/traefik/assets/img/traefik-architecture.png" alt="Architecture">
+				<aside class="notes">
+					Traefik ist ein Open-Source "Edge Router", der es "einfach und spaßig" macht, seine Services zu
+					publizieren. Traefik
+					sitzt dabei vor allen Systemen, empfängt die Anfragen und verteilt sie entsprechend.
+
+					Was Traefik so besonders macht, ist: Es konfiguriert sich fast von alleine, indem es die
+					Infrastruktur inspiziert und
+					sich dann entsprechend konfiguriert.
+
+					Traefik ist zu allen aktuellen Cluster Technologien nativ kompatibel, z.B. Kubernetes, Docker,
+					Docker Swarm, AWS, Mesos,
+					Marathon, uvm. Auch mehrere davon gleichzeitig und Bare Metal wird natürlich auch unterstützt.
+
+					Traefik aktualisiert seine Konfiguration zur Laufzeit, ohne Restarts, in Echtzeit und ohne
+					Verbindungsabbrüche!
+
+				</aside>
+				</section>
+				<section>
+					<h2>Edge Router</h2>
+					<img src="https://docs.traefik.io/assets/img/traefik-concepts-2.png" alt="Concept">
+				</section>
+				<section>
+					<h2>Auto Service Discovery</h2>
+					<img src="https://docs.traefik.io/assets/img/static-dynamic-configuration.png" alt="Dynamic Configuration">
+				</section>
+				<section>
+					<h2 style="align: top;">Dynamische Konfiguration</h2>
+					<ul>
+						<li>Man braucht <b>keine seperate Konfiguration</b> zu pflegen</li>
+						<li>Kein Probleme mit IP-Adressen oder anderen Regelwerken</li>
+						<li>Infos kommen von den Services selbst</li>
+					</ul>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h2>Praktisches Beispiel</h2>
+					<img src="https://docs.traefik.io/assets/img/quickstart-diagram.png" style="height:580px;">
+				</section>
+			</section>
+			<section>
+				<section>
+					<h2>Routers</h2>
+					<img src="img/routers.png" alt="Routers">
+				</section>
+				<section>
+					<h2>Routers</h2>
+					<ul>
+						<li>Default: Router lauschen auf allen Entrypoints</li>
+						<li>Feste Entrypoints lassen sich festlegen</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Routing Rules</h2>
+					<ul>
+						<li>Headers(`key`, `value`)
+						<li>HeadersRegexp(`key`, `regexp`)</li>
+						<li>Host(`example.com`, ...)</li>
+						<li>HostRegexp(`example.com`, `{subdomain:[a-z]+}.example.com`, ...)</li>
+						<li>Method(`GET`, ...)</li>
+						<li>Path(`/path`, `/articles/{cat:[a-z]+}/{id:[0-9]+}`, ...)</li>
+						<li>PathPrefix(`/products/`, `/articles/{cat:[a-z]+}/{id:[0-9]+}`)</li>
+						<li>Query(`foo=bar`, `bar=baz`)</li>
+					</ul>
+					<p class="fragment" style="text-align: right;">&&, || and () possible!</p>
+				</section>
+				<section>
+					<h2>Service Injection?</h2>
+					<pre><code class="hljs yaml" data-trim data-line-numbers>
+	http:
+	  routers:
+	    monolyth:
+	      rule: "Host(`www.my-old-fat-website.com`)"
+	      service: website
+	      # priority: 35 (implicit)
+
+	   microservice:
+		 rule: "Host(`www.my-old-fat-website.com`) \
+		        && Path(`/votes`)"
+	     service: voting-service
+	     # priority: 53 (implicit)
+
+					</code></pre>
+				</section>
+				<section>
+					<h2>Maintenance Example</h2>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h2>Services</h2>
+					<img src="img/services.png" alt="Services" style="height: 560px;">
+				</section>
+				<section>
+					<h2>Services</h2>
+					<ul>
+						<li>Services sind das <b>abstrakte Bindeglied zwischen Routern und Applikationen</b></li>
+						<li>Bei den meistens Providern (Docker, K8s) sind diese <em>implizit</em> und werden automatisch generiert</li>
+					</ul>
+				</section>
+				<section>
+					<h2>File Provider vs. Docker Compose</h2>
+					<pre><code class="hljs yaml" data-line-numbers data-trim style="width:100%; font-size: 0.8em !important;">
+# File Provider: traefik.yaml
+http:
+  services:
+    my-service:
+      loadBalancer:
+        servers:
+          - url: "http://&lt;private-ip-server-1&gt;:&lt;private-port-server-1&gt;/"
+          - url: "http://&lt;private-ip-server-2&gt;:&lt;private-port-server-2&gt;/"
+					</code></pre>
+					<pre><code class="hljs yaml" data-line-numbers data-trim style="width:100%; font-size: 0.8em !important;">
+# docker-compose.yaml
+version: "3"
+services:
+  my-service:
+    image: my-service-image
+    deploy:
+      replicas: 6
+      labels:
+        - "traefik.http.routers.my-service.rule=Host(`example.com`)"
+										</code></pre>
+				</section>
+				<section>
+					<h2>Sticky Session Example</h2>
+				</section>
+				<section>
+					<h2>Expliziter Port</h2>
+					<pre><code class="hljs yaml" data-trim data-line-numbers style="width:100%; font-size: 0.8em !important;">
+version: "3"
+services:
+  my-service:
+    image: my-service-image # exposes 8080 and 9000
+    labels:
+      - "traefik.http.routers.my-service.rule=Host(`example.com`)"
+      - "traefik.http.routers.my-service.service=my-service-svc"
+      - "traefik.http.services.my-service-svc.loadbalancer.server.port=8080"
+					</code></pre>
+				</section>
+				<section>
+					<h2>Wozu braucht man Services noch?</h2>
+					<ul>
+						<li>Health Check</li>
+						<li>(Don't) Pass Host Header</li>
+						<li>Weighted Round Robin</li>
+						<li>Mirroring</li>
+					</ul>
+				</section>
+			</section>
+			<section>
+				<section>
+					<h2><a href="https://doc.traefik.io/traefik/middlewares/overview/">Middleware</a></h2>
+					<img src="img/overview.png" alt="Middleware">
+				</section>
+				<section>
+					<h2>HTTP->HTTPS Redirect</h2>
+					<pre><code class="hljs yaml" data-trim data-line-numbers style="width:100%; font-size: 0.8em !important;">
+services:
+  traefik:
+    image: traefik:2.1
+    command:
+      # ...
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entrypoints.websecure.address=:443
+  website:
+    # ...
+    labels:
+      - traefik.http.routers.website.entrypoints=websecure # optional!
+      - traefik.http.routers.website.rule=Host(`example.com`)
+					</code></pre>
+				</section>
+				<section>
+					<h2>Middleware Example</h2>
+				</section>
+				<section>
+					<h2>Rate Limit Example</h2>
+				</section>
+			</section>
+		</div>
+	</div>
+
+	<script src="dist/reveal.js"></script>
+	<script src="plugin/notes/notes.js"></script>
+	<script src="plugin/markdown/markdown.js"></script>
+	<script src="plugin/highlight/highlight.js"></script>
+	<script>
+		// More info about initialization & config:
+		// - https://revealjs.com/initialization/
+		// - https://revealjs.com/config/
+		Reveal.initialize({
+			hash: true,
+
+			// Learn about plugins: https://revealjs.com/plugins/
+			plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+		});
+
+		n = new Date();
+		y = n.getFullYear();
+		m = n.getMonth() + 1;
+		d = n.getDate();
+		document.getElementById("date").innerHTML = d + "." + m + "." + y;
+
+	</script>
+</body>
+
+</html>
